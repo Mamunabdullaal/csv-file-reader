@@ -43,13 +43,21 @@ function parseCSV(text) {
     console.log("Headers found:", headers);  // Log headers for debugging
 
     // Parse rows and store as objects
-    csvData = rows.slice(1).map(row => {
+    csvData = rows.slice(1).map((row, rowIndex) => {
         const values = row.split(',');
         let agentData = {};
+        
+        // Log the row being processed for debugging
+        console.log(`Processing row ${rowIndex + 1}:`, values);
+
         headers.forEach((header, index) => {
-            // Only assign the value if the index exists in the values array
-            agentData[header] = index < values.length ? values[index].trim() : "";  // Safely handle undefined values
+            if (index < values.length) {
+                agentData[header] = values[index].trim(); // Safely handle undefined values
+            } else {
+                agentData[header] = ""; // Set empty string for missing values
+            }
         });
+
         return agentData;
     });
 
