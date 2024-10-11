@@ -46,12 +46,13 @@ function parseCSV(text) {
     csvData = rows.slice(1).map((row, rowIndex) => {
         const values = row.split(',');
         let agentData = {};
-        
+
         // Log the row being processed for debugging
         console.log(`Processing row ${rowIndex + 1}:`, values);
 
         headers.forEach((header, index) => {
-            if (index < values.length) {
+            // Check if both the header and corresponding value are defined
+            if (index < values.length && values[index].trim() !== "") {
                 agentData[header] = values[index].trim(); // Safely handle undefined values
             } else {
                 agentData[header] = ""; // Set empty string for missing values
