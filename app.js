@@ -33,31 +33,47 @@ function uploadCSV(event) {
 
 // Function to parse CSV data
 function parseCSV(text) {
-    const rows = text.split('\n').filter(row => row.trim() !== ""); // Remove empty rows
+    // Split the text into rows, trimming any whitespace and filtering out empty rows
+    const rows = text.split('\n').map(row => row.trim()).filter(row => row.length > 0);
+    
+    // Ensure there are rows to process
+    if (rows.length === 0) {
+        console.error("No data found in the CSV file.");
+        return;
+    }
+
+    // Split the first row to get headers
     const headers = rows[0].split(',').map(header => header.trim());
+    
+    // Initialize csvData array
+    csvData = [];
 
-    console.log("Headers found:", headers);  // Log headers for debugging
-
-    csvData = rows.slice(1).map((row, rowIndex) => {
-        const values = row.split(',').map(value => value.trim());
+    // Process each row after the header
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i].split(',');
+        
+        // Create an object to hold agent data
         let agentData = {};
-
-        // Log the row being processed for debugging
-        console.log(`Processing row ${rowIndex + 1}:`, values);
-
+        
         headers.forEach((header, index) => {
-            // Validate if the index exists in the values array
-            if (index < values.length) {
-                agentData[header] = values[index] !== undefined ? values[index] : ""; // Check for undefined
+            // Check if values[index] is defined before trimming
+            if (row[index] !== undefined) {
+                agentData[header] = row[index].trim(); // Assign the trimmed value
             } else {
-                agentData[header] = ""; // Set empty string for missing values
+                // Handle the case where a value is missing (e.g., assign an empty string)
+                agentData[header] = ''; 
             }
         });
 
-        return agentData;
-    });
+        // Log each agent's data for debugging
+        console.log(`Row ${i}:`, agentData);
 
-    console.log("CSV data parsed:", csvData);  // Log the parsed CSV data for debugging
+        // Push the agentData object to the csvData array
+        csvData.push(agentData);
+    }
+
+    // Log the final parsed CSV data
+    console.log("CSV data parsed:", csvData);
     fileUploadStatus.textContent = "File successfully uploaded.";
     fileUploadStatus.style.color = "green";  // Change color to indicate success
 }
