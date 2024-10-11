@@ -44,7 +44,7 @@ function parseCSV(text) {
 
     // Parse rows and store as objects
     csvData = rows.slice(1).map((row, rowIndex) => {
-        const values = row.split(',');
+        const values = row.split(',').map(value => value.trim());
         let agentData = {};
 
         // Log the row being processed for debugging
@@ -52,8 +52,8 @@ function parseCSV(text) {
 
         headers.forEach((header, index) => {
             // Check if both the header and corresponding value are defined
-            if (index < values.length && values[index].trim() !== "") {
-                agentData[header] = values[index].trim(); // Safely handle undefined values
+            if (index < values.length) {
+                agentData[header] = values[index] !== undefined ? values[index] : ""; // Check for undefined
             } else {
                 agentData[header] = ""; // Set empty string for missing values
             }
