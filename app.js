@@ -1,8 +1,8 @@
 let csvData = [];
 
 const csvFileInput = document.getElementById('csvFileInput');
-const fileUploadStatus = document.createElement('p');  // Create a status message element
-csvFileInput.insertAdjacentElement('afterend', fileUploadStatus);  // Add it after the input
+const fileUploadStatus = document.createElement('p');
+csvFileInput.insertAdjacentElement('afterend', fileUploadStatus);
 
 document.getElementById('csvFileInput').addEventListener('change', uploadCSV);
 
@@ -47,7 +47,7 @@ function parseCSV(text) {
         const values = row.split(',');
         let agentData = {};
         headers.forEach((header, index) => {
-            agentData[header.trim()] = values[index]?.trim() || "";  // Handle undefined values
+            agentData[header.trim()] = values[index] ? values[index].trim() : "";  // Safely handle undefined values
         });
         return agentData;
     });
@@ -72,7 +72,7 @@ function searchAgent() {
     resultBody.innerHTML = '';
 
     // Find the agent by ID
-    const agent = csvData.find(item => item['agent_id'].trim() === agentId);
+    const agent = csvData.find(item => item['agent_id'] && item['agent_id'].trim() === agentId);
 
     if (agent) {
         const readyTime = parseFloat(agent['ready_time']);
