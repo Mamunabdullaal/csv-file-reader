@@ -105,20 +105,30 @@ function searchAgent() {
             : `Needs ${(requiredTime - readyTime).toFixed(2)} more hours`;
 
         // Append the result to the table
-        resultBody.innerHTML = `
-            <tr>
-                <td>${agent['agent_id']}</td>
-                <td>${agent['login_time']}</td>
-                <td>${agent['logout_time']}</td>
-                <td>${agent['total_break']}</td>
-                <td>${agent['ready_time']}</td>
-                <td>${status}</td>
-            </tr>
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${agent['agent_id']}</td>
+            <td>${agent['agent_name']}</td>
+            <td>${agent['login_time']}</td>
+            <td>${agent['logout_time']}</td>
+            <td>${agent['total_break']}</td>
+            <td>${formatTime(agent['ready_time'])}</td>
+            <td>${agent['current_status']}</td>
+            <td class="${readyTime < requiredTime ? 'text-danger' : ''}">${status}</td>
         `;
 
+        resultBody.appendChild(row);
+        
         // Show the table
         resultTable.style.display = 'table';
     } else {
         alert('Agent ID not found.');
     }
+}
+
+// Function to format time to h:mm:ss
+function formatTime(totalHours) {
+    const hours = Math.floor(totalHours);
+    const minutes = Math.round((totalHours - hours) * 60);
+    return `${hours}:${minutes < 10 ? '0' : ''}${minutes}:00`; // Append seconds as 00
 }
