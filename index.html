@@ -3,86 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agent Log Time Checker</title>
+    <title>Agent Search</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
             height: 100vh;
-            margin: 0;
-            background-color: #f4f4f4;
+            background-color: #f0f0f0;
         }
-
-        h1 {
-            margin-bottom: 20px;
+        #searchSection {
+            text-align: center;
         }
-
-        input {
-            margin-bottom: 10px;
-        }
-
-        #resultTable {
-            border-collapse: collapse;
-            margin-top: 20px;
-            display: none; /* Hide table initially */
-        }
-
         table {
             width: 100%;
-            max-width: 800px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            overflow: hidden;
-            background-color: white;
+            border-collapse: collapse;
+            margin-top: 20px;
         }
-
         th, td {
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid #000;
             text-align: left;
+            white-space: nowrap; /* Prevent wrapping */
         }
-
         th {
             background-color: #f2f2f2;
         }
-
-        .text-danger {
-            color: red; /* Highlight text in red for below 7.30 hours */
+        td.text-danger {
+            color: red;
+        }
+        #resultTable {
+            width: auto;
+            margin: 0 auto;
+        }
+        input {
+            padding: 10px;
+            width: 300px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-
-    <h1>Agent Log Time Checker</h1>
-    <div>
-        <input type="file" id="csvFileInput" accept=".csv">
-        <span id="fileUploadStatus"></span>
-    </div>
-    <div>
-        <input type="text" id="agentIdInput" placeholder="Enter Agent ID">
+    <div id="searchSection">
+        <input type="text" id="agentIdInput" placeholder="Enter Agent ID" onkeydown="handleKeyPress(event)">
         <button onclick="searchAgent()">Search</button>
+        
+        <table id="resultTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Agent ID</th>
+                    <th>Agent Name</th>
+                    <th>Login Time</th>
+                    <th>Logout Time</th>
+                    <th>Total Break</th>
+                    <th>Ready Time</th>
+                    <th>Current Status</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="resultBody"></tbody>
+        </table>
     </div>
-
-    <table id="resultTable">
-        <thead>
-            <tr>
-                <th>Agent ID</th>
-                <th>Agent Name</th>
-                <th>Login Time</th>
-                <th>Logout Time</th>
-                <th>Total Break</th>
-                <th>Ready Time</th>
-                <th>Current Status</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody id="resultBody">
-            <!-- Search results will appear here -->
-        </tbody>
-    </table>
 
     <script src="app.js"></script>
 </body>
