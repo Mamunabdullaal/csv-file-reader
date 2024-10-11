@@ -37,8 +37,8 @@ function uploadCSV(event) {
 
 // Function to parse CSV data
 function parseCSV(text) {
-    const rows = text.split('\n');
-    const headers = rows[0].split(',');
+    const rows = text.split('\n').filter(row => row.trim() !== ""); // Remove empty rows
+    const headers = rows[0].split(',').map(header => header.trim());
 
     console.log("Headers found:", headers);  // Log headers for debugging
 
@@ -47,7 +47,8 @@ function parseCSV(text) {
         const values = row.split(',');
         let agentData = {};
         headers.forEach((header, index) => {
-            agentData[header.trim()] = values[index] ? values[index].trim() : "";  // Safely handle undefined values
+            // Only assign the value if the index exists in the values array
+            agentData[header] = index < values.length ? values[index].trim() : "";  // Safely handle undefined values
         });
         return agentData;
     });
