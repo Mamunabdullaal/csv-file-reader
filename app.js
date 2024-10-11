@@ -1,17 +1,37 @@
 let csvData = [];
 
+// Add a reference to the upload confirmation element
+const csvFileInput = document.getElementById('csvFileInput');
+const fileUploadStatus = document.createElement('p');  // Create a status message element
+csvFileInput.insertAdjacentElement('afterend', fileUploadStatus);  // Add it after the input
+
 document.getElementById('csvFileInput').addEventListener('change', uploadCSV);
 
 // Function to read and parse the uploaded CSV file
 function uploadCSV(event) {
     const file = event.target.files[0];
-    const reader = new FileReader();
 
-    reader.onload = function(e) {
-        const text = e.target.result;
-        parseCSV(text);
-    };
-    reader.readAsText(file);
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const text = e.target.result;
+            parseCSV(text);
+
+            // Show a confirmation message after the file is successfully uploaded
+            fileUploadStatus.textContent = `File "${file.name}" successfully uploaded.`;
+            fileUploadStatus.style.color = "green";  // Change the color to indicate success
+        };
+
+        reader.onerror = function() {
+            fileUploadStatus.textContent = "Error reading the file.";
+            fileUploadStatus.style.color = "red";  // Change the color to indicate an error
+        };
+
+        reader.readAsText(file);
+    } else {
+        fileUploadStatus.textContent = "No file selected.";
+        fileUploadStatus.style.color = "red";  // Change the color to indicate an error
+    }
 }
 
 // Function to parse CSV data
@@ -35,6 +55,13 @@ function parseCSV(text) {
 // Function to search for an agent by ID and display the information
 function searchAgent() {
     const agentId = document.getElementById('agentIdInput').value.trim();
+
+    // Check if CSV data has been uploaded first
+    if (csvData.length === 0) {
+        alert("Please upload a CSV file before searching.");
+        return;
+    }
+
     const resultTable = document.getElementById('resultTable');
     const resultBody = document.getElementById('resultBody');
 
@@ -42,7 +69,7 @@ function searchAgent() {
     resultBody.innerHTML = '';
 
     // Find the agent by ID
-    const agent = csvData.find(item => item['agent_id'] === agentId);
+    const agent = csvData.find(item => item['agent_id'].trim() === agentId);
 
     if (agent) {
         const readyTime = parseFloat(agent['ready_time']);
