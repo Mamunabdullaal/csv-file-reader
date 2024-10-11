@@ -33,56 +33,42 @@ function uploadCSV(event) {
 
 // Function to parse CSV data
 function parseCSV(text) {
-    // Split the text into rows, trimming any whitespace and filtering out empty rows
     const rows = text.split('\n').map(row => row.trim()).filter(row => row.length > 0);
-    
-    // Ensure there are rows to process
+
     if (rows.length === 0) {
         console.error("No data found in the CSV file.");
         return;
     }
 
-    // Split the first row to get headers
     const headers = rows[0].split(',').map(header => header.trim());
-    
-    // Initialize csvData array
+
     csvData = [];
 
-    // Process each row after the header
     for (let i = 1; i < rows.length; i++) {
         const row = rows[i].split(',');
-        
-        // Create an object to hold agent data
         let agentData = {};
-        
+
         headers.forEach((header, index) => {
-            // Check if values[index] is defined before trimming
             if (row[index] !== undefined) {
-                agentData[header] = row[index].trim(); // Assign the trimmed value
+                agentData[header] = row[index].trim();
             } else {
-                // Handle the case where a value is missing (e.g., assign an empty string)
                 agentData[header] = ''; 
             }
         });
 
-        // Log each agent's data for debugging
         console.log(`Row ${i}:`, agentData);
-
-        // Push the agentData object to the csvData array
         csvData.push(agentData);
     }
 
-    // Log the final parsed CSV data
     console.log("CSV data parsed:", csvData);
     fileUploadStatus.textContent = "File successfully uploaded.";
-    fileUploadStatus.style.color = "green";  // Change color to indicate success
+    fileUploadStatus.style.color = "green"; 
 }
 
 // Function to search for an agent by ID and display the information
 function searchAgent() {
     const agentId = document.getElementById('agentIdInput').value.trim();
 
-    // Check if CSV data has been uploaded first
     if (csvData.length === 0) {
         alert("Please upload a CSV file before searching.");
         return;
@@ -91,18 +77,16 @@ function searchAgent() {
     const resultTable = document.getElementById('resultTable');
     const resultBody = document.getElementById('resultBody');
 
-    // Clear previous results
     resultBody.innerHTML = '';
 
-    // Find the agent by ID
     const agent = csvData.find(item => item['agent_id'] && item['agent_id'].trim() === agentId);
 
     if (agent) {
-        const readyTime = parseFloat(agent['ready_time']) || 0; // Ensure ready_time is a number
+        const readyTime = parseFloat(agent['ready_time']) || 0; // Keep the original ready_time value
         const requiredTime = 7.5; // 7 hours and 30 minutes = 7.5 hours
         const status = readyTime >= requiredTime 
             ? 'Complete' 
-            : `Needs ${(requiredTime - readyTime).toFixed(2)} more hours`;
+            : `Needs ${formatDuration((requiredTime - readyTime) * 3600)} more`;
 
         // Append the result to the table
         const row = document.createElement('tr');
@@ -112,23 +96,28 @@ function searchAgent() {
             <td>${agent['login_time']}</td>
             <td>${agent['logout_time']}</td>
             <td>${agent['total_break']}</td>
-            <td>${formatTime(agent['ready_time'])}</td>
+            <td>${agent['ready_time']}</td>
             <td>${agent['current_status']}</td>
             <td class="${readyTime < requiredTime ? 'text-danger' : ''}">${status}</td>
         `;
 
         resultBody.appendChild(row);
-        
-        // Show the table
+
+        // Display the full sentence as output
+        const fullSentenceOutput = `${agent['agent_id']} "${agent['agent_name']}"`;
+        console.log(fullSentenceOutput); // Log the full sentence
+        alert(fullSentenceOutput); // Alert the full sentence output
+
         resultTable.style.display = 'table';
     } else {
         alert('Agent ID not found.');
     }
 }
 
-// Function to format time to h:mm:ss
-function formatTime(totalHours) {
-    const hours = Math.floor(totalHours);
-    const minutes = Math.round((totalHours - hours) * 60);
-    return `${hours}:${minutes < 10 ? '0' : ''}${minutes}:00`; // Append seconds as 00
+// Function to format duration from seconds to h min sec
+function formatDuration(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${hours}h ${minutes}min ${secs}sec`;
 }
