@@ -1,10 +1,11 @@
 let csvData = [];
 
+// Select the CSV file input element
 const csvFileInput = document.getElementById('csvFileInput');
-const fileUploadStatus = document.createElement('p');
-csvFileInput.insertAdjacentElement('afterend', fileUploadStatus);
+const fileUploadStatus = document.getElementById('fileUploadStatus');
 
-document.getElementById('csvFileInput').addEventListener('change', uploadCSV);
+// Event listener for file input change
+csvFileInput.addEventListener('change', uploadCSV);
 
 // Function to read and parse the uploaded CSV file
 function uploadCSV(event) {
@@ -16,22 +17,17 @@ function uploadCSV(event) {
             const text = e.target.result;
             console.log("File content:", text);  // Log the file content for debugging
             parseCSV(text);
-
-            // Show a confirmation message after the file is successfully uploaded
-            fileUploadStatus.textContent = `File "${file.name}" successfully uploaded.`;
-            fileUploadStatus.style.color = "green";  // Change the color to indicate success
         };
 
         reader.onerror = function() {
             fileUploadStatus.textContent = "Error reading the file.";
-            fileUploadStatus.style.color = "red";  // Change the color to indicate an error
-            console.error("Error reading file", reader.error);  // Log the error to console
+            console.error("Error reading file", reader.error);
         };
 
         reader.readAsText(file);
     } else {
         fileUploadStatus.textContent = "No file selected.";
-        fileUploadStatus.style.color = "red";  // Change the color to indicate an error
+        fileUploadStatus.style.color = "red";
     }
 }
 
@@ -42,7 +38,6 @@ function parseCSV(text) {
 
     console.log("Headers found:", headers);  // Log headers for debugging
 
-    // Parse rows and store as objects
     csvData = rows.slice(1).map((row, rowIndex) => {
         const values = row.split(',').map(value => value.trim());
         let agentData = {};
@@ -51,7 +46,7 @@ function parseCSV(text) {
         console.log(`Processing row ${rowIndex + 1}:`, values);
 
         headers.forEach((header, index) => {
-            // Check if both the header and corresponding value are defined
+            // Validate if the index exists in the values array
             if (index < values.length) {
                 agentData[header] = values[index] !== undefined ? values[index] : ""; // Check for undefined
             } else {
@@ -63,6 +58,8 @@ function parseCSV(text) {
     });
 
     console.log("CSV data parsed:", csvData);  // Log the parsed CSV data for debugging
+    fileUploadStatus.textContent = "File successfully uploaded.";
+    fileUploadStatus.style.color = "green";  // Change color to indicate success
 }
 
 // Function to search for an agent by ID and display the information
@@ -85,11 +82,11 @@ function searchAgent() {
     const agent = csvData.find(item => item['agent_id'] && item['agent_id'].trim() === agentId);
 
     if (agent) {
-        const readyTime = parseFloat(agent['ready_time']);
+        const readyTime = parseFloat(agent['ready_time']) || 0; // Ensure ready_time is a number
         const requiredTime = 7.5; // 7 hours and 30 minutes = 7.5 hours
         const status = readyTime >= requiredTime 
             ? 'Complete' 
-            : `Needs ${requiredTime - readyTime} more hours`;
+            : `Needs ${(requiredTime - readyTime).toFixed(2)} more hours`;
 
         // Append the result to the table
         resultBody.innerHTML = `
