@@ -1,6 +1,5 @@
 let csvData = [];
 
-// Add a reference to the upload confirmation element
 const csvFileInput = document.getElementById('csvFileInput');
 const fileUploadStatus = document.createElement('p');  // Create a status message element
 csvFileInput.insertAdjacentElement('afterend', fileUploadStatus);  // Add it after the input
@@ -15,6 +14,7 @@ function uploadCSV(event) {
         const reader = new FileReader();
         reader.onload = function(e) {
             const text = e.target.result;
+            console.log("File content:", text);  // Log the file content for debugging
             parseCSV(text);
 
             // Show a confirmation message after the file is successfully uploaded
@@ -25,6 +25,7 @@ function uploadCSV(event) {
         reader.onerror = function() {
             fileUploadStatus.textContent = "Error reading the file.";
             fileUploadStatus.style.color = "red";  // Change the color to indicate an error
+            console.error("Error reading file", reader.error);  // Log the error to console
         };
 
         reader.readAsText(file);
@@ -39,17 +40,19 @@ function parseCSV(text) {
     const rows = text.split('\n');
     const headers = rows[0].split(',');
 
+    console.log("Headers found:", headers);  // Log headers for debugging
+
     // Parse rows and store as objects
     csvData = rows.slice(1).map(row => {
         const values = row.split(',');
         let agentData = {};
         headers.forEach((header, index) => {
-            agentData[header.trim()] = values[index].trim();
+            agentData[header.trim()] = values[index]?.trim() || "";  // Handle undefined values
         });
         return agentData;
     });
 
-    console.log("CSV data parsed:", csvData);
+    console.log("CSV data parsed:", csvData);  // Log the parsed CSV data for debugging
 }
 
 // Function to search for an agent by ID and display the information
