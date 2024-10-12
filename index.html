@@ -136,14 +136,18 @@
 
     // Function to parse CSV file content
     function parseCSV(text) {
-        const rows = text.trim().split('\n'); // Trim to remove any extra spaces
-        const headers = rows[0].split(',').map(header => header.trim()); // Trim each header
+        const rows = text.split('\n');
+        const headers = rows[0].split(',');
 
         csvData = rows.slice(1).map(row => {
-            const values = row.split(',').map(value => value.trim()); // Trim each value
+            const values = row.split(',');
             let agentData = {};
             headers.forEach((header, index) => {
-                agentData[header] = values[index] !== undefined ? values[index] : ''; // Ensure undefined values are handled
+                if (values[index] !== undefined) {
+                    agentData[header.trim()] = values[index].trim();
+                } else {
+                    agentData[header.trim()] = '';
+                }
             });
             return agentData;
         });
@@ -164,38 +168,38 @@
         const resultBody = document.getElementById('resultBody');
         resultBody.innerHTML = ''; // Clear previous result
 
-        const agent = csvData.find(item => item['Agent ID'] && item['Agent ID'].trim() === agentId);
+        const agent = csvData.find(item => item['agent_id'] && item['agent_id'].trim() === agentId);
 
         if (agent) {
-            const readyTime = parseTime(agent['Ready Time']); // Convert ready_time to decimal hours
+            const readyTime = parseTime(agent['ready_time']); // Convert ready_time to decimal hours
             const requiredTime = 7.5; // 7 hours 30 minutes in decimal = 7.5
             let statusMessage;
 
             // Check if the agent has less than the required time
             if (readyTime < requiredTime) {
                 const timeNeeded = requiredTime - readyTime; // Time required to complete 7.5 hours
-                statusMessage = `Needs ${formatDuration(timeNeeded * 3600)} more`;
+                statusMessage = Needs ${formatDuration(timeNeeded * 3600)} more;
             } else {
                 statusMessage = 'Complete'; // Agent has completed the required time
             }
 
             // Append the result to the table
             const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${agent['Agent ID']}</td>
-                <td>${agent['Agent Name']}</td>
-                <td>${agent['Login Time']}</td>
-                <td>${agent['Logout Time']}</td>
-                <td>${agent['Total Break']}</td>
-                <td>${agent['Ready Time']}</td>
-                <td>${agent['Current Status']}</td>
+            row.innerHTML = 
+                <td>${agent['agent_id']}</td>
+                <td>${agent['agent_name']}</td>
+                <td>${agent['login_time']}</td>
+                <td>${agent['logout_time']}</td>
+                <td>${agent['total_break']}</td>
+                <td>${agent['ready_time']}</td>
+                <td>${agent['current_status']}</td>
                 <td class="${readyTime < requiredTime ? 'text-danger' : ''}">${statusMessage}</td>
-            `;
+            ;
 
             resultBody.appendChild(row);
 
             // Log and alert the full sentence (agent ID and name)
-            const fullSentenceOutput = `${agent['Agent ID']} "${agent['Agent Name']}"`;
+            const fullSentenceOutput = ${agent['agent_id']} "${agent['agent_name']}";
             console.log(fullSentenceOutput);
             alert(fullSentenceOutput);
 
@@ -217,33 +221,33 @@
         resultBody.innerHTML = ''; // Clear previous result
 
         // Find all agents who are still in "Ready Mode" (logout_time is blank)
-        const readyAgents = csvData.filter(agent => !agent['Logout Time'] || agent['Logout Time'].trim() === '');
+        const readyAgents = csvData.filter(agent => !agent['logout_time'] || agent['logout_time'].trim() === '');
 
         if (readyAgents.length > 0) {
             readyAgents.forEach(agent => {
-                const readyTime = parseTime(agent['Ready Time']); // Convert ready_time to decimal hours
+                const readyTime = parseTime(agent['ready_time']); // Convert ready_time to decimal hours
                 const requiredTime = 7.5; // 7 hours 30 minutes in decimal = 7.5
                 let statusMessage;
 
                 if (readyTime < requiredTime) {
                     const timeNeeded = requiredTime - readyTime;
-                    statusMessage = `Needs ${formatDuration(timeNeeded * 3600)} more`;
+                    statusMessage = Needs ${formatDuration(timeNeeded * 3600)} more;
                 } else {
                     statusMessage = 'Complete';
                 }
 
                 // Append each ready agent to the table
                 const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${agent['Agent ID']}</td>
-                    <td>${agent['Agent Name']}</td>
-                    <td>${agent['Login Time']}</td>
-                    <td>${agent['Logout Time']}</td>
-                    <td>${agent['Total Break']}</td>
-                    <td>${agent['Ready Time']}</td>
-                    <td>${agent['Current Status']}</td>
+                row.innerHTML = 
+                    <td>${agent['agent_id']}</td>
+                    <td>${agent['agent_name']}</td>
+                    <td>${agent['login_time']}</td>
+                    <td>${agent['logout_time']}</td>
+                    <td>${agent['total_break']}</td>
+                    <td>${agent['ready_time']}</td>
+                    <td>${agent['current_status']}</td>
                     <td class="${readyTime < requiredTime ? 'text-danger' : ''}">${statusMessage}</td>
-                `;
+                ;
 
                 resultBody.appendChild(row);
             });
@@ -266,13 +270,14 @@
         return 0;
     }
 
-    // Function to format duration in seconds to "xh yym zzs"
+    // Function to format duration (in seconds) into hh:mm:ss
     function formatDuration(seconds) {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
-        const remainingSeconds = Math.floor(seconds % 60);
-        return `${hours}h ${minutes}min ${remainingSeconds}sec`;
+        const secs = Math.floor(seconds % 60);
+        return ${hours}h ${minutes}min ${secs}sec;
     }
 </script>
+
 </body>
 </html>
