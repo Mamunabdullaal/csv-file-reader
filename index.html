@@ -136,18 +136,14 @@
 
     // Function to parse CSV file content
     function parseCSV(text) {
-        const rows = text.split('\n');
-        const headers = rows[0].split(',');
+        const rows = text.trim().split('\n'); // Trim to remove any extra spaces
+        const headers = rows[0].split(',').map(header => header.trim()); // Trim each header
 
         csvData = rows.slice(1).map(row => {
-            const values = row.split(',');
+            const values = row.split(',').map(value => value.trim()); // Trim each value
             let agentData = {};
             headers.forEach((header, index) => {
-                if (values[index] !== undefined) {
-                    agentData[header.trim()] = values[index].trim();
-                } else {
-                    agentData[header.trim()] = '';
-                }
+                agentData[header] = values[index] !== undefined ? values[index] : ''; // Ensure undefined values are handled
             });
             return agentData;
         });
@@ -270,14 +266,13 @@
         return 0;
     }
 
-    // Function to format duration (in seconds) into hh:mm:ss
+    // Function to format duration in seconds to "xh yym zzs"
     function formatDuration(seconds) {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${hours}h ${minutes}min ${secs}sec`;
+        const remainingSeconds = Math.floor(seconds % 60);
+        return `${hours}h ${minutes}min ${remainingSeconds}sec`;
     }
 </script>
-
 </body>
 </html>
