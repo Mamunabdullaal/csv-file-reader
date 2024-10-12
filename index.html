@@ -29,12 +29,16 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            table-layout: fixed; /* Ensures consistent column width */
         }
 
         table, th, td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
+            overflow: hidden; /* Ensures text does not overflow the cell */
+            white-space: nowrap; /* Prevents text from wrapping to the next line */
+            text-overflow: ellipsis; /* Adds ellipsis for overflow text */
         }
 
         th {
@@ -191,7 +195,7 @@
                 <td>${agent['login_time']}</td>
                 <td>${agent['logout_time']}</td>
                 <td>${agent['total_break']}</td>
-                <td>${agent['ready_time']}</td>
+                <td>${formatReadyTime(agent['ready_time'])}</td>
                 <td>${agent['current_status']}</td>
                 <td class="${readyTime < requiredTime ? 'text-danger' : ''}">${statusMessage}</td>
             `;
@@ -216,68 +220,86 @@
             return;
         }
 
-        const resultTable = document.getElementById('resultTable');
-        const resultBody = document.getElementById('resultBody');
-        resultBody.innerHTML = ''; // Clear previous result
-
-        // Find all agents who are still in "Ready Mode" (logout_time is blank)
+        // Create a new page to display results
         const readyAgents = csvData.filter(agent => !agent['logout_time'] || agent['logout_time'].trim() === '');
+        const totalAgentsNotLoggedIn = readyAgents.length;
 
-        if (readyAgents.length > 0) {
-            readyAgents.forEach(agent => {
-                const readyTime = parseTime(agent['ready_time']); // Convert ready_time to decimal hours
-                const requiredTime = 7.5; // 7 hours 30 minutes in decimal = 7.5
-                let statusMessage;
+        let newWindow = window.open();
+        newWindow.document.write(`
+            <html>
+                <head>
+                    <title>Still Ready Mode</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        table, th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Agents Still in Ready Mode</h1>
+                    <p>Total Agents Not Logged In: ${totalAgentsNotLoggedIn}</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Agent ID</th>
+                                <th>Agent Name</th>
+                                <th>Login Time</th>
+                                <th>Logout Time</th>
+                                <th>Total Break</th>
+                                <th>Ready Time</th>
+                                <th>Current Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `);
 
-                if (readyTime < requiredTime) {
-                    const timeNeeded = requiredTime - readyTime;
-                    statusMessage = `Needs ${formatDuration(timeNeeded * 3600)} more`;
-                } else {
-                    statusMessage = 'Complete';
-                }
-
-                // Append each ready agent to the table
-                const row = document.createElement('tr');
-                row.innerHTML = `
+        readyAgents.forEach(agent => {
+            newWindow.document.write(`
+                <tr>
                     <td>${agent['agent_id']}</td>
                     <td>${agent['agent_name']}</td>
                     <td>${agent['login_time']}</td>
                     <td>${agent['logout_time']}</td>
                     <td>${agent['total_break']}</td>
-                    <td>${agent['ready_time']}</td>
+                    <td>${formatReadyTime(agent['ready_time'])}</td>
                     <td>${agent['current_status']}</td>
-                    <td class="${readyTime < requiredTime ? 'text-danger' : ''}">${statusMessage}</td>
-                `;
+                </tr>
+            `);
+        });
 
-                resultBody.appendChild(row);
-            });
-
-            resultTable.style.display = 'table';
-        } else {
-            alert('No agents currently in Ready Mode.');
-        }
+        newWindow.document.write(`
+                        </tbody>
+                    </table>
+                </body>
+            </html>
+        `);
+        newWindow.document.close(); // Close the document to render
     }
 
-    // Function to parse time from "hh:mm:ss" to decimal hours
-    function parseTime(timeString) {
-        const parts = timeString.split(':');
-        if (parts.length === 3) {
-            const hours = parseFloat(parts[0]);
-            const minutes = parseFloat(parts[1]) / 60;
-            const seconds = parseFloat(parts[2]) / 3600;
-            return hours + minutes + seconds;
-        }
-        return 0;
+    // Function to convert ready_time to decimal hours
+    function parseTime(time) {
+        const parts = time.split('h');
+        const hours = parseFloat(parts[0]);
+        const minutes = parts.length > 1 ? parseFloat(parts[1].replace('min', '')) : 0;
+        return hours + (minutes / 60); // Convert to decimal hours
     }
 
-    // Function to format duration (in seconds) into hh:mm:ss
+    // Function to format ready_time
+    function formatReadyTime(time) {
+        const parts = time.split('h');
+        const hours = parts[0] ? parts[0] : '0';
+        const minutes = parts.length > 1 ? parts[1].replace('min', '').trim() : '0';
+        return `${hours.trim()}h ${minutes.trim()}min`;
+    }
+
+    // Function to format duration in hours, minutes, and seconds
     function formatDuration(seconds) {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${hours}h ${minutes}min ${secs}sec`;
+        const remainingSeconds = seconds % 60;
+        return `${hours}h ${minutes}min ${remainingSeconds}sec`;
     }
 </script>
-
 </body>
 </html>
