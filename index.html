@@ -17,12 +17,13 @@
 
         .container {
             text-align: center;
-            width: 80%;
+            width: 90%; /* Adjusted to be responsive */
             max-width: 800px;
             background-color: #fff;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow-x: auto; /* Allow horizontal scrolling if needed */
         }
 
         table {
@@ -159,7 +160,7 @@
                 }
             });
             return agentData;
-        });
+        }).filter(agent => Object.values(agent).some(value => value)); // Remove empty rows
 
         console.log("CSV data parsed:", csvData);
     }
@@ -258,31 +259,35 @@
                         <td>${agent['total_break']}</td>
                         <td>${agent['ready_time']}</td>
                         <td>${agent['current_status']}</td>
-                        <td>${statusMessage}</td>
+                        <td class="${readyTime < requiredTime ? 'text-danger' : ''}">${statusMessage}</td>
                     </tr>
                 `);
             });
+            newWindow.document.write('</tbody></table>');
+            newWindow.document.write(`<p>Total Agents in Ready Mode: ${readyAgents.length}</p>`); // Show total agents
         } else {
-            newWindow.document.write('<tr><td colspan="8">No agents currently in Ready Mode.</td></tr>');
+            newWindow.document.write('<tr><td colspan="8">No agents found in Ready Mode.</td></tr>');
+            newWindow.document.write('</tbody></table>');
+            newWindow.document.write(`<p>Total Agents in Ready Mode: 0</p>`); // Show total agents as 0
         }
-
-        newWindow.document.write('</tbody></table>');
-
-        // Display total number of agents who did not log in
-        const totalNotLoggedIn = csvData.filter(agent => !agent['login_time'] || agent['login_time'].trim() === '').length;
-        newWindow.document.write(`<h3>Total Agents Who Did Not Log In: ${totalNotLoggedIn}</h3>`);
 
         newWindow.document.write('</body></html>');
         newWindow.document.close();
     }
 
-    // Function to convert time format (HH:MM:SS) to decimal hours
-    function parseTime(timeStr) {
-        const parts = timeStr.split(':');
-        return +parts[0] + +parts[1] / 60 + +parts[2] / 3600;
+    // Function to parse ready_time into decimal hours
+    function parseTime(readyTime) {
+        const parts = readyTime.split(':');
+        if (parts.length === 3) {
+            const hours = parseFloat(parts[0]);
+            const minutes = parseFloat(parts[1]) / 60;
+            const seconds = parseFloat(parts[2]) / 3600;
+            return hours + minutes + seconds;
+        }
+        return 0; // Default to 0 if the format is not as expected
     }
 
-    // Function to format seconds into HH:MM:SS
+    // Function to format seconds into human-readable format
     function formatDuration(seconds) {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
