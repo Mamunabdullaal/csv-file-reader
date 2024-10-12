@@ -7,23 +7,50 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f4f4f4;
             margin: 0;
+            padding: 0;
+            height: 100vh; /* Full height */
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column; /* Stack elements vertically */
         }
 
         .container {
             text-align: center;
-            width: 90%; /* Adjusted to be responsive */
-            max-width: 800px;
-            background-color: #fff;
+            flex: 1; /* Take up remaining space */
+            display: flex;
+            flex-direction: column; /* Stack elements vertically */
+            justify-content: center; /* Center content vertically */
+            align-items: center; /* Center content horizontally */
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            overflow-x: auto; /* Allow horizontal scrolling if needed */
+            overflow: hidden; /* Hide overflow */
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        input[type="text"], input[type="file"] {
+            padding: 8px;
+            margin: 10px;
+            width: 70%;
+            max-width: 300px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #45a049;
         }
 
         table {
@@ -57,29 +84,14 @@
 
         #resultTable {
             display: none; /* Hidden initially, shown after search */
+            width: 100%;
+            overflow-x: auto; /* Allow horizontal scrolling if needed */
         }
 
-        input[type="text"], input[type="file"] {
-            padding: 8px;
-            margin: 10px;
-            width: 70%;
-            max-width: 300px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-
-        button {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px;
-        }
-
-        button:hover {
-            background-color: #45a049;
+        .result-container {
+            flex: 1; /* Take up remaining space */
+            display: none; /* Initially hidden */
+            overflow-y: auto; /* Allow vertical scrolling */
         }
     </style>
 </head>
@@ -99,8 +111,10 @@
     
     <!-- Still Ready Mode button -->
     <button onclick="stillReadyMode()">Still Ready Mode</button>
+</div>
 
-    <!-- Result table -->
+<!-- Result table -->
+<div class="result-container" id="resultContainer">
     <table id="resultTable">
         <thead>
             <tr>
@@ -214,6 +228,7 @@
             alert(fullSentenceOutput);
 
             resultTable.style.display = 'table';
+            document.getElementById('resultContainer').style.display = 'block'; // Show result container
         } else {
             alert('Agent ID not found.');
         }
