@@ -111,6 +111,9 @@
     
     <!-- Still Ready Mode button -->
     <button onclick="stillReadyMode()">Still Ready Mode</button>
+    
+    <!-- Ready Hours Done button -->
+    <button onclick="readyHoursDone()">07:30 Hour Done</button>
 </div>
 
 <!-- Result table -->
@@ -247,6 +250,7 @@
         const newWindow = window.open('', '_blank');
         newWindow.document.write('<html><head><title>Still Ready Mode</title></head><body>');
         newWindow.document.write('<h1>Agents Still in Ready Mode</h1>');
+        newWindow.document.write(`<p>Total Agents in Ready Mode: ${readyAgents.length}</p>`);
         newWindow.document.write('<table border="1" style="width: 100%; border-collapse: collapse;">');
         newWindow.document.write('<thead><tr><th>Agent ID</th><th>Agent Name</th><th>Login Time</th><th>Logout Time</th><th>Total Break</th><th>Ready Time</th><th>Current Status</th><th>Status</th></tr></thead>');
         newWindow.document.write('<tbody>');
@@ -278,37 +282,83 @@
                     </tr>
                 `);
             });
-            newWindow.document.write('</tbody></table>');
-            newWindow.document.write(`<p>Total Agents in Ready Mode: ${readyAgents.length}</p>`); // Show total agents
         } else {
             newWindow.document.write('<tr><td colspan="8">No agents found in Ready Mode.</td></tr>');
-            newWindow.document.write('</tbody></table>');
-            newWindow.document.write(`<p>Total Agents in Ready Mode: 0</p>`); // Show total agents as 0
         }
 
+        newWindow.document.write('</tbody></table>');
         newWindow.document.write('</body></html>');
         newWindow.document.close();
     }
 
-    // Function to parse ready_time into decimal hours
-    function parseTime(readyTime) {
-        const parts = readyTime.split(':');
-        if (parts.length === 3) {
-            const hours = parseFloat(parts[0]);
-            const minutes = parseFloat(parts[1]) / 60;
-            const seconds = parseFloat(parts[2]) / 3600;
-            return hours + minutes + seconds;
+    // Function to search and display Ready Hours Done agents
+    function readyHoursDone() {
+        if (csvData.length === 0) {
+            alert("Please upload a CSV file before using Ready Hours Done.");
+            return;
         }
-        return 0; // Default to 0 if the format is not as expected
+
+        const completedAgents = csvData.filter(agent => agent['logout_time'] && agent['ready_time']);
+        
+        // Open new window for "Ready Hours Done"
+        const newWindow = window.open('', '_blank');
+        newWindow.document.write('<html><head><title>Ready Hours Done</title></head><body>');
+        newWindow.document.write('<h1>Agents Ready Hours Done</h1>');
+        newWindow.document.write(`<p>Total Agents Ready Hour Done: ${completedAgents.length}</p>`);
+        newWindow.document.write('<table border="1" style="width: 100%; border-collapse: collapse;">');
+        newWindow.document.write('<thead><tr><th>Agent ID</th><th>Agent Name</th><th>Login Time</th><th>Logout Time</th><th>Total Break</th><th>Ready Time</th><th>Current Status</th><th>Status</th></tr></thead>');
+        newWindow.document.write('<tbody>');
+
+        if (completedAgents.length > 0) {
+            completedAgents.forEach(agent => {
+                const readyTime = parseTime(agent['ready_time']); // Convert ready_time to decimal hours
+                const requiredTime = 7.5; // 7 hours 30 minutes in decimal = 7.5
+                let statusMessage;
+
+                // Check if the agent has completed the required time
+                if (readyTime >= requiredTime) {
+                    statusMessage = 'Complete'; // Agent has completed the required time
+                } else {
+                    const timeNeeded = requiredTime - readyTime; // Time required to complete 7.5 hours
+                    statusMessage = `Needs ${formatDuration(timeNeeded * 3600)} more`;
+                }
+
+                newWindow.document.write(`
+                    <tr>
+                        <td>${agent['agent_id']}</td>
+                        <td>${agent['agent_name']}</td>
+                        <td>${agent['login_time']}</td>
+                        <td>${agent['logout_time']}</td>
+                        <td>${agent['total_break']}</td>
+                        <td>${agent['ready_time']}</td>
+                        <td>${agent['current_status']}</td>
+                        <td class="${readyTime < requiredTime ? 'text-danger' : ''}">${statusMessage}</td>
+                    </tr>
+                `);
+            });
+        } else {
+            newWindow.document.write('<tr><td colspan="8">No agents found with completed Ready Hours.</td></tr>');
+        }
+
+        newWindow.document.write('</tbody></table>');
+        newWindow.document.write('</body></html>');
+        newWindow.document.close();
     }
 
-    // Function to format seconds into human-readable format
+    // Helper function to parse ready_time from string to decimal hours
+    function parseTime(timeString) {
+        const parts = timeString.split(':');
+        return parseFloat(parts[0]) + (parts[1] ? parseFloat(parts[1]) / 60 : 0);
+    }
+
+    // Helper function to format duration in hours, minutes, seconds
     function formatDuration(seconds) {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
-        const secs = seconds % 60;
+        const secs = Math.floor(seconds % 60);
         return `${hours}h ${minutes}min ${secs}sec`;
     }
 </script>
+
 </body>
 </html>
