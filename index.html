@@ -65,6 +65,7 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            margin: 5px;
         }
 
         button:hover {
@@ -85,6 +86,9 @@
     
     <!-- Search button -->
     <button onclick="searchAgent()">Search</button>
+    
+    <!-- Still Ready Mode button -->
+    <button onclick="stillReadyMode()">Still Ready Mode</button>
 
     <!-- Result table -->
     <table id="resultTable">
@@ -205,6 +209,55 @@
         }
     }
 
+    // Function to search and display agents still in Ready Mode
+    function stillReadyMode() {
+        if (csvData.length === 0) {
+            alert("Please upload a CSV file before using Still Ready Mode.");
+            return;
+        }
+
+        const resultTable = document.getElementById('resultTable');
+        const resultBody = document.getElementById('resultBody');
+        resultBody.innerHTML = ''; // Clear previous result
+
+        // Find all agents who are still in "Ready Mode" (logout_time is blank)
+        const readyAgents = csvData.filter(agent => !agent['logout_time'] || agent['logout_time'].trim() === '');
+
+        if (readyAgents.length > 0) {
+            readyAgents.forEach(agent => {
+                const readyTime = parseTime(agent['ready_time']); // Convert ready_time to decimal hours
+                const requiredTime = 7.5; // 7 hours 30 minutes in decimal = 7.5
+                let statusMessage;
+
+                if (readyTime < requiredTime) {
+                    const timeNeeded = requiredTime - readyTime;
+                    statusMessage = `Needs ${formatDuration(timeNeeded * 3600)} more`;
+                } else {
+                    statusMessage = 'Complete';
+                }
+
+                // Append each ready agent to the table
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${agent['agent_id']}</td>
+                    <td>${agent['agent_name']}</td>
+                    <td>${agent['login_time']}</td>
+                    <td>${agent['logout_time']}</td>
+                    <td>${agent['total_break']}</td>
+                    <td>${agent['ready_time']}</td>
+                    <td>${agent['current_status']}</td>
+                    <td class="${readyTime < requiredTime ? 'text-danger' : ''}">${statusMessage}</td>
+                `;
+
+                resultBody.appendChild(row);
+            });
+
+            resultTable.style.display = 'table';
+        } else {
+            alert('No agents currently in Ready Mode.');
+        }
+    }
+
     // Function to parse time from "hh:mm:ss" to decimal hours
     function parseTime(timeString) {
         const parts = timeString.split(':');
@@ -217,12 +270,12 @@
         return 0;
     }
 
-    // Function to format duration from seconds to "h mm s"
-    function formatDuration(totalSeconds) {
-        const hours = Math.floor(totalSeconds / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = Math.floor(totalSeconds % 60);
-        return `${hours}h ${minutes}min ${seconds}sec`;
+    // Function to format duration (in seconds) into hh:mm:ss
+    function formatDuration(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${hours}h ${minutes}min ${secs}sec`;
     }
 </script>
 
