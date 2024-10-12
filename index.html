@@ -3,206 +3,281 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agent Log Time Checker</title>
+    <title>Agent Time Tracker</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
             background-color: #f4f4f4;
+            margin: 0;
         }
+
         .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
             text-align: center;
-            color: #333;
+            width: 80%;
+            max-width: 800px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
-        input[type="file"], input[type="text"] {
-            display: block;
-            margin: 20px auto;
-            width: 300px;
-            padding: 10px;
-            font-size: 16px;
-        }
-        button {
-            display: block;
-            margin: 10px auto;
-            padding: 10px 20px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #218838;
-        }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
+
         table, th, td {
             border: 1px solid #ddd;
-        }
-        th, td {
-            padding: 12px;
+            padding: 8px;
             text-align: left;
-            white-space: nowrap; /* This ensures that the text doesn't break into multiple lines */
         }
+
         th {
             background-color: #f2f2f2;
         }
-        td {
-            font-size: 14px;
-        }
-        .red-text {
+
+        .text-danger {
             color: red;
+        }
+
+        #resultTable {
+            display: none; /* Hidden initially, shown after search */
+        }
+
+        input[type="text"], input[type="file"] {
+            padding: 8px;
+            margin: 10px;
+            width: 70%;
+            max-width: 300px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #45a049;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Agent Log Time Checker</h1>
-        <input type="file" id="fileInput" accept=".csv">
-        <input type="text" id="agentIDInput" placeholder="Enter Agent ID">
-        <button onclick="searchAgent()">Search</button>
-        <button onclick="stillReadyMode()">Still Ready Mode</button>
-        
-        <table id="resultTable">
-            <thead>
-                <tr>
-                    <th>Agent ID</th>
-                    <th>Agent Name</th>
-                    <th>Login Time</th>
-                    <th>Logout Time</th>
-                    <th>Total Break</th>
-                    <th>Ready Time</th>
-                    <th>Current Status</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Search results will be injected here -->
-            </tbody>
-        </table>
-    </div>
 
-    <script>
-        let csvData = [];
+<div class="container">
+    <h1>Agent Time Tracker</h1>
 
-        document.getElementById('fileInput').addEventListener('change', function (event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const text = e.target.result;
-                    parseCSV(text);
-                };
-                reader.readAsText(file);
-            }
+    <!-- File upload -->
+    <input type="file" id="fileInput" accept=".csv">
+    
+    <!-- Search input -->
+    <input type="text" id="agentIdInput" placeholder="Enter Agent ID">
+    
+    <!-- Search button -->
+    <button onclick="searchAgent()">Search</button>
+    
+    <!-- Still Ready Mode button -->
+    <button onclick="stillReadyMode()">Still Ready Mode</button>
+
+    <!-- Result table -->
+    <table id="resultTable">
+        <thead>
+            <tr>
+                <th>Agent ID</th>
+                <th>Agent Name</th>
+                <th>Login Time</th>
+                <th>Logout Time</th>
+                <th>Total Break</th>
+                <th>Ready Time</th>
+                <th>Current Status</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="resultBody"></tbody>
+    </table>
+</div>
+
+<script>
+    let csvData = [];
+
+    // Function to handle file upload
+    document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+
+    // Handle Enter key to trigger search
+    document.getElementById('agentIdInput').addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+            searchAgent();
+        }
+    });
+
+    // Function to handle CSV file upload and parse it
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const text = e.target.result;
+            parseCSV(text);
+        };
+
+        reader.readAsText(file);
+    }
+
+    // Function to parse CSV file content
+    function parseCSV(text) {
+        const rows = text.split('\n');
+        const headers = rows[0].split(',');
+
+        csvData = rows.slice(1).map(row => {
+            const values = row.split(',');
+            let agentData = {};
+            headers.forEach((header, index) => {
+                if (values[index] !== undefined) {
+                    agentData[header.trim()] = values[index].trim();
+                } else {
+                    agentData[header.trim()] = '';
+                }
+            });
+            return agentData;
         });
 
-        function parseCSV(text) {
-            const rows = text.split('\n');
-            const headers = rows[0].split(',');
+        console.log("CSV data parsed:", csvData);
+    }
 
-            csvData = rows.slice(1).map(row => {
-                const values = row.split(',');
-                let agentData = {};
-                headers.forEach((header, index) => {
-                    if (values[index] !== undefined) {
-                        agentData[header.trim()] = values[index].trim();
-                    } else {
-                        agentData[header.trim()] = ''; // Handle missing values
-                    }
-                });
-                return agentData;
-            });
+    // Function to search agent by ID and display results
+    function searchAgent() {
+        const agentId = document.getElementById('agentIdInput').value.trim();
 
-            console.log("CSV data parsed:", csvData);
+        if (csvData.length === 0) {
+            alert("Please upload a CSV file before searching.");
+            return;
         }
 
-        function searchAgent() {
-            const agentID = document.getElementById('agentIDInput').value.trim();
-            const resultTableBody = document.querySelector('#resultTable tbody');
-            resultTableBody.innerHTML = '';
+        const resultTable = document.getElementById('resultTable');
+        const resultBody = document.getElementById('resultBody');
+        resultBody.innerHTML = ''; // Clear previous result
 
-            const agent = csvData.find(data => data['Agent ID'] === agentID);
-            if (agent) {
-                const readyTime = agent['Ready Time'];
-                const readySeconds = convertTimeToSeconds(readyTime);
-                const requiredSeconds = 7.5 * 3600;
-                const remainingSeconds = requiredSeconds - readySeconds;
+        const agent = csvData.find(item => item['Agent ID'] && item['Agent ID'].trim() === agentId);
 
-                let statusText = 'Ready';
-                let statusColor = '';
-                if (remainingSeconds > 0) {
-                    statusText = `Needs ${formatDuration(remainingSeconds)} more`;
-                    statusColor = 'red-text'; // Add red color if below required time
+        if (agent) {
+            const readyTime = parseTime(agent['Ready Time']); // Convert ready_time to decimal hours
+            const requiredTime = 7.5; // 7 hours 30 minutes in decimal = 7.5
+            let statusMessage;
+
+            // Check if the agent has less than the required time
+            if (readyTime < requiredTime) {
+                const timeNeeded = requiredTime - readyTime; // Time required to complete 7.5 hours
+                statusMessage = `Needs ${formatDuration(timeNeeded * 3600)} more`;
+            } else {
+                statusMessage = 'Complete'; // Agent has completed the required time
+            }
+
+            // Append the result to the table
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${agent['Agent ID']}</td>
+                <td>${agent['Agent Name']}</td>
+                <td>${agent['Login Time']}</td>
+                <td>${agent['Logout Time']}</td>
+                <td>${agent['Total Break']}</td>
+                <td>${agent['Ready Time']}</td>
+                <td>${agent['Current Status']}</td>
+                <td class="${readyTime < requiredTime ? 'text-danger' : ''}">${statusMessage}</td>
+            `;
+
+            resultBody.appendChild(row);
+
+            // Log and alert the full sentence (agent ID and name)
+            const fullSentenceOutput = `${agent['Agent ID']} "${agent['Agent Name']}"`;
+            console.log(fullSentenceOutput);
+            alert(fullSentenceOutput);
+
+            resultTable.style.display = 'table';
+        } else {
+            alert('Agent ID not found.');
+        }
+    }
+
+    // Function to search and display agents still in Ready Mode
+    function stillReadyMode() {
+        if (csvData.length === 0) {
+            alert("Please upload a CSV file before using Still Ready Mode.");
+            return;
+        }
+
+        const resultTable = document.getElementById('resultTable');
+        const resultBody = document.getElementById('resultBody');
+        resultBody.innerHTML = ''; // Clear previous result
+
+        // Find all agents who are still in "Ready Mode" (logout_time is blank)
+        const readyAgents = csvData.filter(agent => !agent['Logout Time'] || agent['Logout Time'].trim() === '');
+
+        if (readyAgents.length > 0) {
+            readyAgents.forEach(agent => {
+                const readyTime = parseTime(agent['Ready Time']); // Convert ready_time to decimal hours
+                const requiredTime = 7.5; // 7 hours 30 minutes in decimal = 7.5
+                let statusMessage;
+
+                if (readyTime < requiredTime) {
+                    const timeNeeded = requiredTime - readyTime;
+                    statusMessage = `Needs ${formatDuration(timeNeeded * 3600)} more`;
+                } else {
+                    statusMessage = 'Complete';
                 }
 
-                const rowHTML = `
-                    <tr>
-                        <td>${agent['Agent ID']}</td>
-                        <td>${agent['Agent Name']}</td>
-                        <td>${agent['Login Time']}</td>
-                        <td>${agent['Logout Time']}</td>
-                        <td>${agent['Total Break']}</td>
-                        <td>${agent['Ready Time']}</td>
-                        <td>${agent['Current Status']}</td>
-                        <td class="${statusColor}">${statusText}</td>
-                    </tr>
+                // Append each ready agent to the table
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${agent['Agent ID']}</td>
+                    <td>${agent['Agent Name']}</td>
+                    <td>${agent['Login Time']}</td>
+                    <td>${agent['Logout Time']}</td>
+                    <td>${agent['Total Break']}</td>
+                    <td>${agent['Ready Time']}</td>
+                    <td>${agent['Current Status']}</td>
+                    <td class="${readyTime < requiredTime ? 'text-danger' : ''}">${statusMessage}</td>
                 `;
 
-                resultTableBody.innerHTML = rowHTML;
-            } else {
-                alert('Agent ID not found.');
-            }
-        }
-
-        function stillReadyMode() {
-            const resultTableBody = document.querySelector('#resultTable tbody');
-            resultTableBody.innerHTML = '';
-
-            csvData.forEach(agent => {
-                if (!agent['Logout Time']) {
-                    const rowHTML = `
-                        <tr>
-                            <td>${agent['Agent ID']}</td>
-                            <td>${agent['Agent Name']}</td>
-                            <td>${agent['Login Time']}</td>
-                            <td>${agent['Logout Time']}</td>
-                            <td>${agent['Total Break']}</td>
-                            <td>${agent['Ready Time']}</td>
-                            <td>${agent['Current Status']}</td>
-                            <td>Still Ready</td>
-                        </tr>
-                    `;
-
-                    resultTableBody.innerHTML += rowHTML;
-                }
+                resultBody.appendChild(row);
             });
-        }
 
-        function convertTimeToSeconds(timeString) {
-            const parts = timeString.split(':').map(part => parseInt(part, 10));
-            const [hours = 0, minutes = 0, seconds = 0] = parts;
-            return (hours * 3600) + (minutes * 60) + seconds;
+            resultTable.style.display = 'table';
+        } else {
+            alert('No agents currently in Ready Mode.');
         }
+    }
 
-        function formatDuration(seconds) {
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${hours}h ${minutes}min ${secs}sec`;
+    // Function to parse time from "hh:mm:ss" to decimal hours
+    function parseTime(timeString) {
+        const parts = timeString.split(':');
+        if (parts.length === 3) {
+            const hours = parseFloat(parts[0]);
+            const minutes = parseFloat(parts[1]) / 60;
+            const seconds = parseFloat(parts[2]) / 3600;
+            return hours + minutes + seconds;
         }
-    </script>
+        return 0;
+    }
+
+    // Function to format duration (in seconds) into hh:mm:ss
+    function formatDuration(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${hours}h ${minutes}min ${secs}sec`;
+    }
+</script>
+
 </body>
 </html>
