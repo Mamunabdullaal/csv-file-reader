@@ -29,20 +29,25 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            table-layout: fixed; /* Ensures consistent column width */
+            table-layout: auto; /* Allow the table to adjust column widths */
         }
 
-        table, th, td {
+        th, td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
-            overflow: hidden; /* Ensures text does not overflow the cell */
-            white-space: nowrap; /* Prevents text from wrapping to the next line */
-            text-overflow: ellipsis; /* Adds ellipsis for overflow text */
+            white-space: nowrap; /* Prevent wrapping of text */
+            overflow: hidden; /* Hide overflow text */
+            text-overflow: ellipsis; /* Add ellipsis for overflow text */
         }
 
         th {
             background-color: #f2f2f2;
+            width: auto; /* Allow auto width */
+        }
+
+        td {
+            max-width: 150px; /* Set a max width for the cells */
         }
 
         .text-danger {
@@ -195,7 +200,7 @@
                 <td>${agent['login_time']}</td>
                 <td>${agent['logout_time']}</td>
                 <td>${agent['total_break']}</td>
-                <td>${formatReadyTime(agent['ready_time'])}</td>
+                <td>${agent['ready_time']}</td>
                 <td>${agent['current_status']}</td>
                 <td class="${readyTime < requiredTime ? 'text-danger' : ''}">${statusMessage}</td>
             `;
@@ -220,85 +225,69 @@
             return;
         }
 
-        // Create a new page to display results
         const readyAgents = csvData.filter(agent => !agent['logout_time'] || agent['logout_time'].trim() === '');
-        const totalAgentsNotLoggedIn = readyAgents.length;
+        
+        // Open new window for "Still Ready Mode"
+        const newWindow = window.open('', '_blank');
+        newWindow.document.write('<html><head><title>Still Ready Mode</title></head><body>');
+        newWindow.document.write('<h1>Agents Still in Ready Mode</h1>');
+        newWindow.document.write('<table border="1" style="width: 100%; border-collapse: collapse;">');
+        newWindow.document.write('<thead><tr><th>Agent ID</th><th>Agent Name</th><th>Login Time</th><th>Logout Time</th><th>Total Break</th><th>Ready Time</th><th>Current Status</th><th>Status</th></tr></thead>');
+        newWindow.document.write('<tbody>');
 
-        let newWindow = window.open();
-        newWindow.document.write(`
-            <html>
-                <head>
-                    <title>Still Ready Mode</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                        table, th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                        th { background-color: #f2f2f2; }
-                    </style>
-                </head>
-                <body>
-                    <h1>Agents Still in Ready Mode</h1>
-                    <p>Total Agents Not Logged In: ${totalAgentsNotLoggedIn}</p>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Agent ID</th>
-                                <th>Agent Name</th>
-                                <th>Login Time</th>
-                                <th>Logout Time</th>
-                                <th>Total Break</th>
-                                <th>Ready Time</th>
-                                <th>Current Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-        `);
+        if (readyAgents.length > 0) {
+            readyAgents.forEach(agent => {
+                const readyTime = parseTime(agent['ready_time']); // Convert ready_time to decimal hours
+                const requiredTime = 7.5; // 7 hours 30 minutes in decimal = 7.5
+                let statusMessage;
 
-        readyAgents.forEach(agent => {
-            newWindow.document.write(`
-                <tr>
-                    <td>${agent['agent_id']}</td>
-                    <td>${agent['agent_name']}</td>
-                    <td>${agent['login_time']}</td>
-                    <td>${agent['logout_time']}</td>
-                    <td>${agent['total_break']}</td>
-                    <td>${formatReadyTime(agent['ready_time'])}</td>
-                    <td>${agent['current_status']}</td>
-                </tr>
-            `);
-        });
+                // Check if the agent has less than the required time
+                if (readyTime < requiredTime) {
+                    const timeNeeded = requiredTime - readyTime; // Time required to complete 7.5 hours
+                    statusMessage = `Needs ${formatDuration(timeNeeded * 3600)} more`;
+                } else {
+                    statusMessage = 'Complete'; // Agent has completed the required time
+                }
 
-        newWindow.document.write(`
-                        </tbody>
-                    </table>
-                </body>
-            </html>
-        `);
-        newWindow.document.close(); // Close the document to render
+                newWindow.document.write(`
+                    <tr>
+                        <td>${agent['agent_id']}</td>
+                        <td>${agent['agent_name']}</td>
+                        <td>${agent['login_time']}</td>
+                        <td>${agent['logout_time']}</td>
+                        <td>${agent['total_break']}</td>
+                        <td>${agent['ready_time']}</td>
+                        <td>${agent['current_status']}</td>
+                        <td>${statusMessage}</td>
+                    </tr>
+                `);
+            });
+        } else {
+            newWindow.document.write('<tr><td colspan="8">No agents currently in Ready Mode.</td></tr>');
+        }
+
+        newWindow.document.write('</tbody></table>');
+
+        // Display total number of agents who did not log in
+        const totalNotLoggedIn = csvData.filter(agent => !agent['login_time'] || agent['login_time'].trim() === '').length;
+        newWindow.document.write(`<h3>Total Agents Who Did Not Log In: ${totalNotLoggedIn}</h3>`);
+
+        newWindow.document.write('</body></html>');
+        newWindow.document.close();
     }
 
-    // Function to convert ready_time to decimal hours
-    function parseTime(time) {
-        const parts = time.split('h');
-        const hours = parseFloat(parts[0]);
-        const minutes = parts.length > 1 ? parseFloat(parts[1].replace('min', '')) : 0;
-        return hours + (minutes / 60); // Convert to decimal hours
+    // Function to convert time format (HH:MM:SS) to decimal hours
+    function parseTime(timeStr) {
+        const parts = timeStr.split(':');
+        return +parts[0] + +parts[1] / 60 + +parts[2] / 3600;
     }
 
-    // Function to format ready_time
-    function formatReadyTime(time) {
-        const parts = time.split('h');
-        const hours = parts[0] ? parts[0] : '0';
-        const minutes = parts.length > 1 ? parts[1].replace('min', '').trim() : '0';
-        return `${hours.trim()}h ${minutes.trim()}min`;
-    }
-
-    // Function to format duration in hours, minutes, and seconds
+    // Function to format seconds into HH:MM:SS
     function formatDuration(seconds) {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
-        const remainingSeconds = seconds % 60;
-        return `${hours}h ${minutes}min ${remainingSeconds}sec`;
+        const secs = seconds % 60;
+        return `${hours}h ${minutes}min ${secs}sec`;
     }
 </script>
 </body>
