@@ -178,14 +178,14 @@
             // Check if the agent has less than the required time
             if (readyTime < requiredTime) {
                 const timeNeeded = requiredTime - readyTime; // Time required to complete 7.5 hours
-                statusMessage = Needs ${formatDuration(timeNeeded * 3600)} more;
+                statusMessage = `Needs ${formatDuration(timeNeeded * 3600)} more`;
             } else {
                 statusMessage = 'Complete'; // Agent has completed the required time
             }
 
             // Append the result to the table
             const row = document.createElement('tr');
-            row.innerHTML = 
+            row.innerHTML = `
                 <td>${agent['agent_id']}</td>
                 <td>${agent['agent_name']}</td>
                 <td>${agent['login_time']}</td>
@@ -194,12 +194,12 @@
                 <td>${agent['ready_time']}</td>
                 <td>${agent['current_status']}</td>
                 <td class="${readyTime < requiredTime ? 'text-danger' : ''}">${statusMessage}</td>
-            ;
+            `;
 
             resultBody.appendChild(row);
 
             // Log and alert the full sentence (agent ID and name)
-            const fullSentenceOutput = ${agent['agent_id']} "${agent['agent_name']}";
+            const fullSentenceOutput = `${agent['agent_id']} "${agent['agent_name']}"`;
             console.log(fullSentenceOutput);
             alert(fullSentenceOutput);
 
@@ -231,14 +231,14 @@
 
                 if (readyTime < requiredTime) {
                     const timeNeeded = requiredTime - readyTime;
-                    statusMessage = Needs ${formatDuration(timeNeeded * 3600)} more;
+                    statusMessage = `Needs ${formatDuration(timeNeeded * 3600)} more`;
                 } else {
                     statusMessage = 'Complete';
                 }
 
                 // Append each ready agent to the table
                 const row = document.createElement('tr');
-                row.innerHTML = 
+                row.innerHTML = `
                     <td>${agent['agent_id']}</td>
                     <td>${agent['agent_name']}</td>
                     <td>${agent['login_time']}</td>
@@ -247,7 +247,7 @@
                     <td>${agent['ready_time']}</td>
                     <td>${agent['current_status']}</td>
                     <td class="${readyTime < requiredTime ? 'text-danger' : ''}">${statusMessage}</td>
-                ;
+                `;
 
                 resultBody.appendChild(row);
             });
@@ -275,7 +275,7 @@
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
         const secs = Math.floor(seconds % 60);
-        return ${hours}h ${minutes}min ${secs}sec;
+        return `${hours}h ${minutes}min ${secs}sec`;
     }
 </script>
 
