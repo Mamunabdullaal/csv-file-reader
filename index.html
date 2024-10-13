@@ -8,22 +8,56 @@
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
+            background-color: #1c1c1c;
+            color: #f0f0f0;
+            transition: background-color 0.3s, color 0.3s;
         }
+        h1 {
+            text-align: center;
+            color: #ffdd57; /* Colorful header */
+            margin-bottom: 20px;
+        }
+        input[type="file"],
+        input[type="text"],
+        button {
+            margin: 5px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        input[type="file"], input[type="text"] {
+            width: calc(100% - 22px);
+        }
+        button:hover {
+            transform: scale(1.05); /* Slight scale animation on hover */
+        }
+        /* Different colors for buttons */
+        .btn-search { background-color: #4CAF50; color: white; }
+        .btn-still-ready { background-color: #2196F3; color: white; }
+        .btn-hours-done { background-color: #FF9800; color: white; }
+        .btn-needs-more { background-color: #F44336; color: white; }
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
         th, td {
-            border: 1px solid #ccc;
-            padding: 8px;
+            border: 1px solid #444;
+            padding: 10px;
             text-align: left;
         }
         th {
-            background-color: #f2f2f2;
+            background-color: #333;
+            color: #ffdd57; /* Header color */
         }
         .text-danger {
-            color: red;
+            color: #FF4C4C; /* Red for needing more time */
+        }
+        .result-container {
+            display: none; /* Hide initially */
         }
     </style>
 </head>
@@ -34,10 +68,10 @@
 
     <input type="file" id="fileInput" accept=".csv">
     <input type="text" id="agentIdInput" placeholder="Enter Agent ID">
-    <button onclick="searchAgent()">Search</button>
-    <button onclick="stillReadyMode()">Still Ready Mode</button>
-    <button onclick="readyHoursDone()">07:30 Hour Done</button>
-    <button onclick="showNeedsMoreTime()">Show Agents Needing More Time</button> <!-- New button added -->
+    <button class="btn-search" onclick="searchAgent()">Search</button>
+    <button class="btn-still-ready" onclick="stillReadyMode()">Still Ready Mode</button>
+    <button class="btn-hours-done" onclick="readyHoursDone()">07:30 Hour Done</button>
+    <button class="btn-needs-more" onclick="showNeedsMoreTime()">Show Agents Needing More Time</button>
 </div>
 
 <div class="result-container" id="resultContainer">
@@ -198,8 +232,8 @@
 
         const newWindow = window.open('', '_blank');
         newWindow.document.write('<html><head><title>07:30 Hour Done</title></head><body>');
-        newWindow.document.write('<h1>Agents Who Completed 7.30 Hours</h1>');
-        newWindow.document.write(`<p>Total Agents Completed 7.30 Hours: ${readyAgents.length}</p>`);
+        newWindow.document.write('<h1>Agents Who Completed 07:30 Hours</h1>');
+        newWindow.document.write(`<p>Total Agents Completed: ${readyAgents.length}</p>`);
         newWindow.document.write('<table border="1" style="width: 100%; border-collapse: collapse;">');
         newWindow.document.write('<thead><tr><th>Agent ID</th><th>Agent Name</th><th>Login Time</th><th>Logout Time</th><th>Total Break</th><th>Ready Time</th><th>Current Status</th></tr></thead>');
         newWindow.document.write('<tbody>');
@@ -219,7 +253,7 @@
                 `);
             });
         } else {
-            newWindow.document.write('<tr><td colspan="7">No agents found who completed 7.30 hours.</td></tr>');
+            newWindow.document.write('<tr><td colspan="7">No agents found who completed 07:30 hours.</td></tr>');
         }
 
         newWindow.document.write('</tbody></table>');
@@ -227,7 +261,6 @@
         newWindow.document.close();
     }
 
-    // Function to show agents needing more time to complete 7.30 hours
     function showNeedsMoreTime() {
         if (csvData.length === 0) {
             alert("Please upload a CSV file before using this function.");
@@ -240,12 +273,20 @@
             return readyTime < requiredTime && agent['logout_time']; // Ensure there's a logout time and less than required time
         });
 
-        // Open new window for agents needing more time
         const newWindow = window.open('', '_blank');
-        newWindow.document.write('<html><head><title>Agents Needing More Time</title></head><body>');
+        newWindow.document.write('<html><head><title>Agents Needing More Time</title><style>');
+        newWindow.document.write(`
+            body { font-family: Arial, sans-serif; background-color: #1c1c1c; color: #f0f0f0; }
+            h1 { text-align: center; color: #ffdd57; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #444; padding: 10px; text-align: left; }
+            th { background-color: #333; color: #ffdd57; }
+            .text-danger { color: #FF4C4C; }
+        `);
+        newWindow.document.write('</style></head><body>');
         newWindow.document.write('<h1>Agents Needing More Time to Complete 7.30 Hours</h1>');
         newWindow.document.write(`<p>Total Agents Needing More Time: ${agentsNeedingMoreTime.length}</p>`);
-        newWindow.document.write('<table border="1" style="width: 100%; border-collapse: collapse;">');
+        newWindow.document.write('<table border="1">');
         newWindow.document.write('<thead><tr><th>Agent ID</th><th>Agent Name</th><th>Login Time</th><th>Logout Time</th><th>Total Break</th><th>Ready Time</th><th>Current Status</th><th>Status</th></tr></thead>');
         newWindow.document.write('<tbody>');
 
@@ -254,7 +295,6 @@
                 const readyTime = parseTime(agent['ready_time']); // Convert ready_time to decimal hours
                 const requiredTime = 7.5; // 7 hours 30 minutes in decimal = 7.5
                 const timeNeeded = requiredTime - readyTime; // Time required to complete 7.5 hours
-                const statusMessage = `Needs ${formatDuration(timeNeeded * 3600)} more`;
 
                 newWindow.document.write(`
                     <tr>
@@ -265,7 +305,7 @@
                         <td>${agent['total_break']}</td>
                         <td>${agent['ready_time']}</td>
                         <td>${agent['current_status']}</td>
-                        <td class="text-danger">${statusMessage}</td>
+                        <td class="text-danger">Needs ${formatDuration(timeNeeded * 3600)} more</td>
                     </tr>
                 `);
             });
@@ -279,14 +319,18 @@
     }
 
     function parseTime(timeString) {
-        const timeParts = timeString.split(':');
-        return parseFloat(timeParts[0]) + (parseFloat(timeParts[1]) / 60); // Convert to decimal hours
+        if (!timeString) return 0;
+        const [hours, minutes] = timeString.split(':').map(Number);
+        return hours + minutes / 60; // Convert to decimal hours
     }
 
     function formatDuration(seconds) {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
-        return `${hours} hour(s) ${minutes} minute(s)`;
+        const formatted = [];
+        if (hours > 0) formatted.push(`${hours} hour${hours > 1 ? 's' : ''}`);
+        if (minutes > 0) formatted.push(`${minutes} minute${minutes > 1 ? 's' : ''}`);
+        return formatted.join(' and ');
     }
 </script>
 
