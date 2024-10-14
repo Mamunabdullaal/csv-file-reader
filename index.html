@@ -7,13 +7,10 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0; /* Remove margin to avoid extra space */
+            margin: 20px;
             background-color: #1c1c1c;
             color: #f0f0f0;
             transition: background-color 0.3s, color 0.3s;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh; /* Ensure the footer sticks to the bottom */
         }
         h1 {
             text-align: center;
@@ -62,21 +59,6 @@
         .result-container {
             display: none; /* Hide initially */
         }
-        .container {
-            flex: 1; /* Makes the container grow and take available space */
-            padding: 20px;
-        }
-        footer {
-            position: relative; /* Footer is relative to the page */
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            width: 100%;
-            padding: 10px 0;
-            background-color: #333; /* Optional: Give the footer a background color */
-            color: #ffdd57; /* Optional: Footer text color */
-        }
     </style>
 </head>
 <body>
@@ -109,10 +91,6 @@
         <tbody id="resultBody"></tbody>
     </table>
 </div>
-
-<footer>
-    All Rights Reserved By Adnan
-</footer>
 
 <script>
     let csvData = [];
@@ -242,25 +220,26 @@
 
     function readyHoursDone() {
         if (csvData.length === 0) {
-            alert("Please upload a CSV file before checking hours.");
+            alert("Please upload a CSV file before using this function.");
             return;
         }
 
-        const completedAgents = csvData.filter(agent => {
-            const readyTime = parseTime(agent['ready_time']);
-            return readyTime >= 7.5; // Filter agents with 7:30 or more ready time
+        const readyAgents = csvData.filter(agent => {
+            const readyTime = parseTime(agent['ready_time']); // Convert ready_time to decimal hours
+            const requiredTime = 7.5; // 7 hours 30 minutes in decimal = 7.5
+            return readyTime >= requiredTime; // Check if ready time meets or exceeds required time
         });
 
         const newWindow = window.open('', '_blank');
         newWindow.document.write('<html><head><title>07:30 Hour Done</title></head><body>');
-        newWindow.document.write('<h1>Agents with 07:30 Hours Completed</h1>');
-        newWindow.document.write(`<p>Total Agents Done: ${completedAgents.length}</p>`);
+        newWindow.document.write('<h1>Agents Who Completed 07:30 Hours</h1>');
+        newWindow.document.write(`<p>Total Agents Completed: ${readyAgents.length}</p>`);
         newWindow.document.write('<table border="1" style="width: 100%; border-collapse: collapse;">');
         newWindow.document.write('<thead><tr><th>Agent ID</th><th>Agent Name</th><th>Login Time</th><th>Logout Time</th><th>Total Break</th><th>Ready Time</th><th>Current Status</th></tr></thead>');
         newWindow.document.write('<tbody>');
 
-        if (completedAgents.length > 0) {
-            completedAgents.forEach(agent => {
+        if (readyAgents.length > 0) {
+            readyAgents.forEach(agent => {
                 newWindow.document.write(`
                     <tr>
                         <td>${agent['agent_id']}</td>
@@ -274,7 +253,7 @@
                 `);
             });
         } else {
-            newWindow.document.write('<tr><td colspan="7">No agents found with 07:30 hours completed.</td></tr>');
+            newWindow.document.write('<tr><td colspan="7">No agents found who completed 07:30 hours.</td></tr>');
         }
 
         newWindow.document.write('</tbody></table>');
@@ -284,25 +263,39 @@
 
     function showNeedsMoreTime() {
         if (csvData.length === 0) {
-            alert("Please upload a CSV file before checking needs more time.");
+            alert("Please upload a CSV file before using this function.");
             return;
         }
 
         const agentsNeedingMoreTime = csvData.filter(agent => {
-            const readyTime = parseTime(agent['ready_time']);
-            return readyTime < 7.5;
+            const readyTime = parseTime(agent['ready_time']); // Convert ready_time to decimal hours
+            const requiredTime = 7.5; // 7 hours 30 minutes in decimal = 7.5
+            return readyTime < requiredTime && agent['logout_time']; // Ensure there's a logout time and less than required time
         });
 
         const newWindow = window.open('', '_blank');
-        newWindow.document.write('<html><head><title>Agents Needing More Time</title></head><body>');
-        newWindow.document.write('<h1>Agents Needing More Time</h1>');
+        newWindow.document.write('<html><head><title>Agents Needing More Time</title><style>');
+        newWindow.document.write(`
+            body { font-family: Arial, sans-serif; background-color: #1c1c1c; color: #f0f0f0; }
+            h1 { text-align: center; color: #ffdd57; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #444; padding: 10px; text-align: left; }
+            th { background-color: #333; color: #ffdd57; }
+            .text-danger { color: #FF4C4C; }
+        `);
+        newWindow.document.write('</style></head><body>');
+        newWindow.document.write('<h1>Agents Needing More Time to Complete 7.30 Hours</h1>');
         newWindow.document.write(`<p>Total Agents Needing More Time: ${agentsNeedingMoreTime.length}</p>`);
-        newWindow.document.write('<table border="1" style="width: 100%; border-collapse: collapse;">');
-        newWindow.document.write('<thead><tr><th>Agent ID</th><th>Agent Name</th><th>Login Time</th><th>Logout Time</th><th>Total Break</th><th>Ready Time</th><th>Current Status</th></tr></thead>');
+        newWindow.document.write('<table border="1">');
+        newWindow.document.write('<thead><tr><th>Agent ID</th><th>Agent Name</th><th>Login Time</th><th>Logout Time</th><th>Total Break</th><th>Ready Time</th><th>Current Status</th><th>Status</th></tr></thead>');
         newWindow.document.write('<tbody>');
 
         if (agentsNeedingMoreTime.length > 0) {
             agentsNeedingMoreTime.forEach(agent => {
+                const readyTime = parseTime(agent['ready_time']); // Convert ready_time to decimal hours
+                const requiredTime = 7.5; // 7 hours 30 minutes in decimal = 7.5
+                const timeNeeded = requiredTime - readyTime; // Time required to complete 7.5 hours
+
                 newWindow.document.write(`
                     <tr>
                         <td>${agent['agent_id']}</td>
@@ -312,11 +305,12 @@
                         <td>${agent['total_break']}</td>
                         <td>${agent['ready_time']}</td>
                         <td>${agent['current_status']}</td>
+                        <td class="text-danger">Needs ${formatDuration(timeNeeded * 3600)} more</td>
                     </tr>
                 `);
             });
         } else {
-            newWindow.document.write('<tr><td colspan="7">No agents needing more time found.</td></tr>');
+            newWindow.document.write('<tr><td colspan="8">No agents needing more time found.</td></tr>');
         }
 
         newWindow.document.write('</tbody></table>');
@@ -325,14 +319,18 @@
     }
 
     function parseTime(timeString) {
+        if (!timeString) return 0;
         const [hours, minutes] = timeString.split(':').map(Number);
-        return hours + minutes / 60; // Convert time to decimal hours
+        return hours + minutes / 60; // Convert to decimal hours
     }
 
     function formatDuration(seconds) {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
-        return `${hours} hours, ${minutes} minutes`;
+        const formatted = [];
+        if (hours > 0) formatted.push(`${hours} hour${hours > 1 ? 's' : ''}`);
+        if (minutes > 0) formatted.push(`${minutes} minute${minutes > 1 ? 's' : ''}`);
+        return formatted.join(' and ');
     }
 </script>
 
